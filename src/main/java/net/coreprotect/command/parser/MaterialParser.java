@@ -218,6 +218,7 @@ public class MaterialParser {
         tagMap.put("#shulker_box", BlockGroup.SHULKER_BOXES);
         tagMap.put("#carpet", BlockGroup.CARPET);
         tagMap.put("#wool", BlockGroup.WOOL);
+        tagMap.put("#rail", BlockGroup.RAILS);
         return tagMap;
     }
 

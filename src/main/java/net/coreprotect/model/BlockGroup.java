@@ -33,6 +33,7 @@ public final class BlockGroup {
     public static Set<Material> CARPET = new HashSet<>(Tag.WOOL_CARPETS.getValues());
     public static Set<Material> WOOL = new HashSet<>(Tag.WOOL.getValues());
     public static Set<Material> SHULKER_BOXES = new HashSet<>(Tag.SHULKER_BOXES.getValues());
+    public static Set<Material> RAILS = new HashSet<>(Tag.RAILS.getValues());
     public static Set<Material> DOORS = new HashSet<>(Tag.DOORS.getValues());
     public static Set<Material> BUTTONS = new HashSet<>(Tag.BUTTONS.getValues());
     public static Set<Material> PRESSURE_PLATES = new HashSet<>(Tag.PRESSURE_PLATES.getValues());
