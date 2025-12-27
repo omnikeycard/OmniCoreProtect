@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.bukkit.Bukkit;
 import org.bukkit.GameEvent;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -229,7 +230,7 @@ public final class CopperGolemChestListener implements Listener {
                     return;
                 }
 
-                scheduleUntrackedCopperChestCloseFinalize(golemId, containerLocation.clone(), containerType, 1);
+                scheduleUntrackedCopperChestCloseFinalize(golem, containerLocation.clone(), containerType, 1);
                 return;
             }
 
@@ -249,10 +250,11 @@ public final class CopperGolemChestListener implements Listener {
 
         openInteractions.remove(golemId, interaction);
         openInteractionIndexByContainerKey.remove(interaction.containerKey, new OpenInteractionIndex(golemId, interaction.openedAtMillis));
-        scheduleCloseFinalize(golemId, interaction, containerKey, 1);
+        scheduleCloseFinalize(golem, interaction, containerKey, 1);
     }
 
     private void handleContainerCloseWithoutEntity(TransactionKey containerKey, Material containerType, long nowMillis) {
+
         if (containerKey == null) {
             return;
         }
@@ -285,7 +287,10 @@ public final class CopperGolemChestListener implements Listener {
 
         if (openInteractions.remove(golemId, interaction)) {
             openInteractionIndexByContainerKey.remove(containerKey, index);
-            scheduleCloseFinalize(golemId, interaction, containerKey, 1);
+            CopperGolem golem = (CopperGolem) Bukkit.getEntity(golemId);
+            if(golem != null) {
+                scheduleCloseFinalize(golem, interaction, containerKey, 1);
+            }
         }
     }
 
@@ -321,19 +326,15 @@ public final class CopperGolemChestListener implements Listener {
         }
     }
 
-    private void scheduleCloseFinalize(UUID golemId, OpenInteraction interaction, TransactionKey containerKey, int attempt) {
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> finalizeContainerClose(golemId, interaction, containerKey, attempt), CLOSE_FINALIZE_DELAY_TICKS);
+    private void scheduleCloseFinalize(CopperGolem golem, OpenInteraction interaction, TransactionKey containerKey, int attempt) {
+        golem.getScheduler().runDelayed(plugin, (task) -> finalizeContainerClose(golem, interaction, containerKey, attempt), null, CLOSE_FINALIZE_DELAY_TICKS);
     }
 
-    private void scheduleUntrackedCopperChestCloseFinalize(UUID golemId, Location containerLocation, Material containerType, int attempt) {
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> finalizeUntrackedCopperChestClose(golemId, containerLocation, containerType, attempt), CLOSE_FINALIZE_DELAY_TICKS);
+    private void scheduleUntrackedCopperChestCloseFinalize(CopperGolem golem, Location containerLocation, Material containerType, int attempt) {
+        golem.getScheduler().runDelayed(plugin, (task) -> finalizeUntrackedCopperChestClose(golem.getUniqueId(), containerLocation, containerType, attempt), null, CLOSE_FINALIZE_DELAY_TICKS);
     }
 
-    private void finalizeContainerClose(UUID golemId, OpenInteraction interaction, TransactionKey containerKey, int attempt) {
-        Entity entity = plugin.getServer().getEntity(golemId);
-        if (!(entity instanceof CopperGolem)) {
-            return;
-        }
+    private void finalizeContainerClose(CopperGolem entity, OpenInteraction interaction, TransactionKey containerKey, int attempt) {
 
         BlockState blockState = interaction.location.getBlock().getState();
         if (!(blockState instanceof InventoryHolder)) {
@@ -353,13 +354,12 @@ public final class CopperGolemChestListener implements Listener {
         boolean changed = hasInventoryChanged(interaction.baselineState, currentContents);
         if (!changed) {
             if (attempt < CLOSE_FINALIZE_MAX_ATTEMPTS) {
-                scheduleCloseFinalize(golemId, interaction, containerKey, attempt + 1);
+                scheduleCloseFinalize(entity, interaction, containerKey, attempt + 1);
             }
             return;
         }
 
-        CopperGolem golem = (CopperGolem) entity;
-        if (!isAttributableToGolem(golem, interaction, currentContents)) {
+        if (!isAttributableToGolem(entity, interaction, currentContents)) {
             return;
         }
 
@@ -381,7 +381,7 @@ public final class CopperGolemChestListener implements Listener {
         ItemStack heldNowStack = getHeldItemStack(golem);
         if (isEmptyItem(heldNowStack) || heldNowStack == null || heldNowStack.getAmount() <= 0) {
             if (attempt < CLOSE_FALLBACK_MAX_ATTEMPTS) {
-                scheduleUntrackedCopperChestCloseFinalize(golemId, containerLocation, containerType, attempt + 1);
+                scheduleUntrackedCopperChestCloseFinalize(golem, containerLocation, containerType, attempt + 1);
             }
             return;
         }
