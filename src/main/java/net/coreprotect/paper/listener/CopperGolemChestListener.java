@@ -114,10 +114,10 @@ public final class CopperGolemChestListener implements Listener {
             handleContainerOpen((CopperGolem) entity, canonicalLocation, containerKey, containerType, inventoryHolder, now);
         }
         else {
-            if (entity instanceof CopperGolem) {
+            if (entity != null) {
                 handleContainerClose((CopperGolem) entity, canonicalLocation, containerKey, containerType, inventoryHolder, now);
             }
-            else if (entity == null) {
+            else {
                 handleContainerCloseWithoutEntity(containerKey, containerType, now);
             }
         }
